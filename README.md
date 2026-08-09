@@ -1,12 +1,12 @@
-# AURA ARC
+# Shinobi Index
 
-Premium product showcase landing page built with React, Vite, Tailwind-compatible CSS and React Three Fiber.
+Archive éditoriale responsive sur l'univers Naruto, avec recherche, filtres par village/faction, fiches interactives et scène 3D procédurale React Three Fiber.
 
-## Run locally
+## Lancer
 
 ```bash
 npm install
 npm run dev
 ```
 
-The hero object is procedural and requires no external 3D asset or image.
+Aucune image externe n'est requise : les avatars sont des compositions graphiques CSS et l'orbe de chakra est générée avec des primitives Three.js.
