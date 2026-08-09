@@ -25,6 +25,38 @@ function ChakraOrb() {
 function OrbScene() { return <Canvas camera={{ position: [0, 0, 4.2], fov: 38 }} dpr={[1, 2]}><ambientLight intensity={.3} /><Stars radius={6} depth={3} count={150} factor={1.5} saturation={0} fade /><ChakraOrb /><OrbitControls enableZoom={false} autoRotate autoRotateSpeed={.5} /></Canvas>; }
 
 function Avatar({ index }) { return <div className="avatar"><div className="avatar-mark">{String(index + 1).padStart(2,'0')}</div><div className="avatar-glow" /></div>; }
+
+// FAQ data and component
+function FAQ() {
+  const items = [
+    { q: 'Quels sont les modes de financement disponibles ?', a: "Nous proposons plusieurs options : financement classique sur 24–72 mois, leasing avec apport variable, et paiement en plusieurs fois via des partenaires. Le taux dépendra de votre profil et d'une simple vérification de solvabilité." },
+    { q: 'Quelle est la durée de la garantie constructeur et que couvre-t-elle ?', a: "La plupart des véhicules bénéficient d'une garantie constructeur standard de 2 à 5 ans selon le modèle ; elle couvre les défauts de fabrication. Des extensions de garantie optionnelles sont aussi disponibles pour prolonger la couverture." },
+    { q: "Puis-je effectuer un essai routier avant d'acheter ?", a: "Oui : les essais routiers se réservent en ligne ou en concession. Apportez un permis valide ; pour certains modèles, un rendez-vous et une caution peuvent être demandés." },
+    { q: 'Comment fonctionne la livraison du véhicule et quels sont les délais ?', a: "Livraison en concession ou à domicile selon votre préférence. Les délais varient de quelques jours pour un stock local à plusieurs semaines pour une commande spéciale. Nous confirmons la date dès la préparation du véhicule." }
+  ];
+  const [open, setOpen] = useState(null);
+  return (
+    <section id="faq" className="faq">
+      <div className="faq-inner">
+        <header className="faq-head"><h2>FAQ</h2><p>Questions fréquentes sur le financement, la garantie, l'essai et la livraison.</p></header>
+        <div className="faq-list">
+          {items.map((it, i) => (
+            <div className={`faq-item ${open === i ? 'open' : ''}`} key={i}>
+              <button className="faq-question" onClick={() => setOpen(open === i ? null : i)} aria-expanded={open === i}>
+                <span className="q-text">{it.q}</span>
+                <span className="q-arrow">{open === i ? '−' : '+'}</span>
+              </button>
+              <div className="faq-answer" style={{ display: open === i ? 'block' : 'none' }}>
+                <p>{it.a}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function App() {
   const [filter, setFilter] = useState('ALL'); const [query, setQuery] = useState(''); const [active, setActive] = useState(null);
   const visible = useMemo(() => characters.filter(c => (filter === 'ALL' || c[2] === filter) && c[1].toLowerCase().includes(query.toLowerCase())), [filter, query]);
@@ -39,6 +71,10 @@ function App() {
       <div className="toolbar"><div className="filters">{filters.map(f => <button key={f} className={filter === f ? 'active' : ''} onClick={() => setFilter(f)}>{f}</button>)}</div><label className="search">⌕ <input value={query} onChange={e => setQuery(e.target.value)} placeholder="SEARCH OPERATIVE..." /></label></div>
       <div className="grid">{visible.map((c,i) => <article className="card" key={c[1]} onClick={() => setActive(c)}><div className="card-top"><span>#{c[0]}</span><span className="rank">{c[2]}</span></div><Avatar index={characters.indexOf(c)} /><div className="card-info"><h3>{c[1]}</h3><p>{c[3]}</p></div><div className="card-foot"><span>{c[4]}</span><b>↗</b></div></article>)}</div>
     </section>
+
+    {/* FAQ section added per admin request */}
+    <FAQ />
+
     <footer id="about"><span>SHINOBI INDEX / NARUTO FIELD ARCHIVE</span><span>MADE FOR THE CURIOUS · NOT AFFILIATED WITH RIGHTS HOLDERS</span></footer>
     {active && <div className="modal-backdrop" onClick={() => setActive(null)}><div className="modal" onClick={e => e.stopPropagation()}><button className="close" onClick={() => setActive(null)}>×</button><p className="eyebrow">OPERATIVE FILE #{active[0]}</p><div className="modal-avatar"><Avatar index={characters.indexOf(active)} /></div><h2>{active[1]}</h2><p className="modal-meta">{active[2]} / {active[3]}</p><div className="intel"><span>PRIMARY TECHNIQUE</span><strong>{active[4]}</strong><span>STATUS</span><strong>ACTIVE IN ARCHIVE</strong></div></div></div>}
   </main>;
