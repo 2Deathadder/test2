@@ -1,119 +1,33 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Environment, Float, OrbitControls, ContactShadows, MeshTransmissionMaterial } from '@react-three/drei';
-import * as THREE from 'three';
-import './index.css';
+import { Environment, ContactShadows, Float, OrbitControls } from '@react-three/drei';
+import './styles.css';
 
-function ArcSpeaker() {
-  const group = useRef();
-  useFrame((state, delta) => {
-    if (!group.current) return;
-    group.current.rotation.y += delta * 0.22;
-    group.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.55) * 0.035;
-  });
-  return (
-    <group ref={group} rotation={[0.08, -0.45, 0]}>
-      <mesh castShadow position={[0, 0.05, 0]}>
-        <torusGeometry args={[1.34, 0.23, 32, 96, Math.PI * 1.7]} />
-        <meshStandardMaterial color="#e8582a" roughness={0.27} metalness={0.12} />
-      </mesh>
-      <mesh castShadow position={[0.02, 0, 0.04]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[1.04, 1.04, 0.18, 64]} />
-        <meshStandardMaterial color="#171716" roughness={0.24} metalness={0.3} />
-      </mesh>
-      <mesh position={[0.02, 0.1, 0.14]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.8, 0.8, 0.19, 64]} />
-        <meshStandardMaterial color="#282725" roughness={0.72} />
-      </mesh>
-      <mesh position={[0.03, 0, 0.26]} rotation={[0, 0, Math.PI / 2]}>
-        <torusGeometry args={[0.6, 0.012, 12, 64]} />
-        <meshBasicMaterial color="#e8582a" />
-      </mesh>
-      <mesh position={[0.03, 0, 0.27]} rotation={[0, 0, Math.PI / 2]}>
-        <sphereGeometry args={[0.055, 20, 20]} />
-        <meshBasicMaterial color="#f9b49c" />
-      </mesh>
-    </group>
-  );
-}
-
-function ProductScene() {
-  return (
-    <Canvas shadows camera={{ position: [0, 0.5, 4.6], fov: 34 }} dpr={[1, 2]}>
-      <ambientLight intensity={1.4} />
-      <spotLight position={[3, 4, 4]} intensity={80} angle={0.35} penumbra={1} castShadow />
-      <pointLight position={[-3, 1, 1]} intensity={12} color="#e8582a" />
-      <Float speed={1.3} rotationIntensity={0.15} floatIntensity={0.3}>
-        <ArcSpeaker />
-      </Float>
-      <ContactShadows position={[0, -1.48, 0]} opacity={0.34} scale={5} blur={2.5} far={3} />
-      <Environment preset="studio" />
-      <OrbitControls enablePan={false} enableZoom={false} minPolarAngle={Math.PI / 2.35} maxPolarAngle={Math.PI / 1.75} />
-    </Canvas>
-  );
-}
-
-const features = [
-  ['01', 'Room-filling clarity', 'A custom acoustic architecture that makes every note feel close, dimensional, and true.'],
-  ['02', 'Quietly intelligent', 'Adaptive listening reads your room and shapes the sound around how you live.'],
-  ['03', 'Made to be seen', 'A tactile object in anodised aluminium, designed to age beautifully in any space.']
+const cars = [
+  { id:'aether', name:'Aether R', type:'Grand Tourer', price:'142 900 €', power:'620 ch', zero:'3,4 s', speed:'320 km/h', color:'#aab2bc', accent:'#53c6ff' },
+  { id:'noctis', name:'Noctis RS', type:'Performance Coupé', price:'118 500 €', power:'540 ch', zero:'3,8 s', speed:'305 km/h', color:'#27313e', accent:'#7a9cff' },
+  { id:'velum', name:'Velum S', type:'Electric Sport', price:'96 800 €', power:'510 ch', zero:'3,9 s', speed:'280 km/h', color:'#e8e6e1', accent:'#65e2ff' }
 ];
 
-function Arrow() { return <span className="arrow">↗</span>; }
-
-function App() {
-  const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-  return (
-    <div className="site-shell">
-      <header className="nav">
-        <button className="wordmark" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>AURA<span>—</span>ARC</button>
-        <nav className="nav-links" aria-label="Main navigation">
-          <button onClick={() => scrollTo('story')}>The story</button>
-          <button onClick={() => scrollTo('details')}>Details</button>
-          <button onClick={() => scrollTo('order')}>Order</button>
-        </nav>
-        <button className="menu-button" aria-label="Open menu"><span></span><span></span></button>
-      </header>
-
-      <main>
-        <section className="hero">
-          <div className="hero-copy">
-            <p className="eyebrow"><span className="dot"></span> A new kind of listening</p>
-            <h1>Sound,<br /><em>sculpted.</em></h1>
-            <p className="hero-intro">AURA ARC is an intelligent speaker shaped around the way sound moves — and the way you live.</p>
-            <div className="hero-actions">
-              <button className="button button-dark" onClick={() => scrollTo('order')}>Discover AURA ARC <Arrow /></button>
-              <button className="text-link" onClick={() => scrollTo('story')}>Explore the story <span>↓</span></button>
-            </div>
-          </div>
-          <div className="hero-visual">
-            <div className="visual-label label-top">OBJECT / 001<br /><span>THE ARC SPEAKER</span></div>
-            <ProductScene />
-            <div className="visual-label label-bottom">DRAG TO ROTATE <span className="cross">+</span></div>
-            <div className="orange-orb"></div>
-          </div>
-          <div className="scroll-mark">SCROLL TO EXPLORE <span>↓</span></div>
-        </section>
-
-        <section className="manifesto" id="story">
-          <div className="section-kicker">AURA ARC / PHILOSOPHY</div>
-          <div className="manifesto-content"><h2>Less machine.<br /><span>More presence.</span></h2><p>We believe technology should earn its place in your home. ARC is a considered object: responsive when you need it, almost invisible when you don't.</p></div>
-        </section>
-
-        <section className="features" id="details">
-          <div className="section-kicker">WHY ARC <span>03 / 03</span></div>
-          <div className="feature-grid">{features.map(([number, title, text]) => <article className="feature" key={number}><div className="feature-number">{number}</div><div><h3>{title}</h3><p>{text}</p><button className="circle-link" aria-label={`Read more about ${title}`}><Arrow /></button></div></article>)}</div>
-        </section>
-
-        <section className="specs" id="order">
-          <div className="specs-copy"><p className="eyebrow"><span className="dot"></span> The quiet statement</p><h2>Beautifully<br /><em>in tune.</em></h2><p>Engineered in Copenhagen. Tuned by hand. ARC brings a richer, more responsive sound to the rituals you already love.</p><button className="button button-light">Reserve yours <Arrow /></button></div>
-          <div className="spec-table"><div><span>Dimensions</span><strong>28 × 28 × 12 cm</strong></div><div><span>Weight</span><strong>3.8 kg</strong></div><div><span>Finish</span><strong>Arc Orange / Graphite</strong></div><div><span>Connectivity</span><strong>Wi-Fi 6 · Bluetooth 5.3</strong></div><div><span>Price</span><strong>€499 <small>incl. VAT</small></strong></div></div>
-        </section>
-      </main>
-      <footer className="footer"><div className="wordmark footer-mark">AURA<span>—</span>ARC</div><p>Sound for considered living.</p><div className="footer-links"><a href="mailto:hello@aura-arc.example">Contact</a><a href="#story">Instagram</a><a href="#details">Journal</a></div><div className="copyright">© 2025 AURA ARC</div></footer>
-    </div>
-  );
+function CarModel({ color='#aab2bc' }) {
+  const ref=useRef();
+  useFrame((state)=>{ if(ref.current) ref.current.rotation.y = state.pointer.x * .34; });
+  return <group ref={ref} rotation={[0,-.28,0]}>
+    <mesh position={[0,.38,0]} castShadow><boxGeometry args={[3.55,.48,1.45]}/><meshStandardMaterial color={color} metalness={.9} roughness={.2}/></mesh>
+    <mesh position={[.18,.78,0]} castShadow><boxGeometry args={[1.72,.48,1.18]}/><meshStandardMaterial color={color} metalness={.85} roughness={.18}/></mesh>
+    <mesh position={[.18,.82,0]}><boxGeometry args={[1.35,.3,1.06]}/><meshStandardMaterial color="#101720" metalness={.35} roughness={.1}/></mesh>
+    {[[-1.15,.15,.77], [1.15,.15,.77],[-1.15,.15,-.77],[1.15,.15,-.77]].map((p,i)=><mesh key={i} position={p} rotation={[Math.PI/2,0,0]} castShadow><cylinderGeometry args={[.38,.38,.22,32]}/><meshStandardMaterial color="#080a0e" metalness={.8} roughness={.24}/></mesh>)}
+    <mesh position={[1.79,.43,0]}><boxGeometry args={[.05,.07,1.05]}/><meshStandardMaterial color="#74d9ff" emissive="#2aaeff" emissiveIntensity={4}/></mesh>
+    <mesh position={[-1.79,.43,0]}><boxGeometry args={[.05,.07,1.05]}/><meshStandardMaterial color="#ff3b6b" emissive="#ff164e" emissiveIntensity={2}/></mesh>
+  </group>
 }
+function CarCanvas({small=false}) { return <div className={small?'car-canvas small':'car-canvas'}><Canvas shadows camera={{position:[4,2.4,5],fov:38}}><ambientLight intensity={.35}/><spotLight position={[2,5,3]} intensity={80} angle={.35} penumbra={1} castShadow/><pointLight position={[-4,1,-2]} color="#168dff" intensity={20}/><Float speed={1} rotationIntensity={.08} floatIntensity={.18}><CarModel/></Float><ContactShadows position={[0,-.15,0]} opacity={.55} scale={7} blur={2.5}/><Environment preset="city"/><OrbitControls enableZoom={false} enablePan={false} minPolarAngle={1.1} maxPolarAngle={1.65}/></Canvas></div> }
+function Header({page,setPage}) { return <header><button className="brand" onClick={()=>setPage('home')}><span>AL</span> AUTOLUX</button><nav><button onClick={()=>setPage('home')} className={page==='home'?'active':''}>Accueil</button><button onClick={()=>setPage('catalog')} className={page==='catalog'?'active':''}>Modèles</button><button onClick={()=>setPage('contact')} className={page==='contact'?'active':''}>Nous trouver</button></nav><button className="outline" onClick={()=>setPage('contact')}>Prendre rendez-vous <b>↗</b></button></header> }
+function Home({setPage}) { return <><section className="hero"><div className="hero-copy"><p className="eyebrow">AUTOLUX / COLLECTION 2025</p><h1>Drive<br/><em>beyond.</em></h1><p className="lead">L'ingénierie de la performance, sculptée pour ceux qui refusent les compromis.</p><div className="actions"><button className="primary" onClick={()=>setPage('catalog')}>Explorer la collection <b>↗</b></button><button className="textbtn" onClick={()=>setPage('contact')}>Réserver un essai <span>→</span></button></div></div><div className="hero-car"><div className="halo"/><CarCanvas/><div className="hint">↔ <span>Faites glisser pour explorer</span></div></div><div className="hero-meta"><span>01 — 03</span><div className="progress"><i/></div><span>Une nouvelle perspective</span></div></section><section className="intro"><p className="eyebrow">L'EXCELLENCE EN MOUVEMENT</p><h2>Chaque ligne a une raison.<br/><span>Chaque trajet, une signature.</span></h2><p className="muted">AutoLux sélectionne des automobiles d'exception et compose avec vous une expérience aussi singulière que votre conduite.</p></section></> }
+function Catalog({setPage}) { return <main className="page"><div className="page-title"><div><p className="eyebrow">LA COLLECTION AUTOLUX</p><h1>Choisissez votre<br/><em>prochaine émotion.</em></h1></div><p className="muted">03 modèles · édition limitée<br/>Disponibles à l'essai en showroom</p></div><div className="catalog">{cars.map((car,i)=><article className="car-card" key={car.id} onClick={()=>setPage('detail')}><div className="card-number">0{i+1}</div><CarCanvas small/><div className="card-copy"><p className="eyebrow">{car.type}</p><h2>{car.name}</h2><div><span>{car.price}</span><button>Découvrir ↗</button></div></div></article>)}</div></main> }
+function Detail({setPage}) { const car=cars[0]; return <main className="page detail"><button className="back" onClick={()=>setPage('catalog')}>← Retour à la collection</button><div className="detail-grid"><div><p className="eyebrow">GRAND TOURER / AETHER SERIES</p><h1>Aether <em>R</em></h1><p className="lead">Une présence sculpturale. Une accélération qui redéfinit l'horizon.</p><CarCanvas/></div><div className="spec-panel"><p className="eyebrow">PERFORMANCES</p><div className="specs"><div><strong>{car.power}</strong><small>Puissance</small></div><div><strong>{car.zero}</strong><small>0 — 100 km/h</small></div><div><strong>{car.speed}</strong><small>Vitesse max.</small></div><div><strong>V8</strong><small>Moteur biturbo</small></div></div><div className="price">À partir de <strong>{car.price}</strong></div><button className="primary wide" onClick={()=>setPage('contact')}>Réserver un essai <b>↗</b></button><p className="fine">Personnalisation, financement et livraison sur mesure disponibles.</p></div></div></main> }
+function Contact() { const [sent,setSent]=useState(false); return <main className="page contact"><div className="contact-heading"><p className="eyebrow">L'EXPÉRIENCE AUTOLUX</p><h1>Votre prochain<br/><em>départ commence ici.</em></h1><p className="muted">Venez rencontrer nos modèles dans un cadre privé et prendre le temps de choisir celui qui vous ressemble.</p><div className="contact-info"><span>01 84 80 20 25</span><span>showroom@autolux.fr</span><span>Paris · Genève · Monaco</span></div></div><form onSubmit={e=>{e.preventDefault();setSent(true)}}><p className="eyebrow">RÉSERVER UN ESSAI</p>{sent?<div className="success">Merci. Notre équipe vous recontactera sous 24 heures.</div>:<><label>Nom complet<input required placeholder="Jean Dupont"/></label><label>Adresse email<input required type="email" placeholder="jean@exemple.fr"/></label><label>Modèle souhaité<select><option>Aether R</option><option>Noctis RS</option><option>Velum S</option></select></label><label>Votre message<textarea placeholder="Parlez-nous de votre projet..."/></label><button className="primary wide">Envoyer la demande <b>↗</b></button></>}</form></main> }
+function App(){const [page,setPage]=useState('home');return <><Header page={page} setPage={setPage}/>{page==='home'?<Home setPage={setPage}/>:page==='catalog'?<Catalog setPage={setPage}/>:page==='detail'?<Detail setPage={setPage}/>:<Contact/>}<footer><span>© 2025 AUTOLUX</span><span>Instagram&nbsp;&nbsp; · &nbsp;&nbsp;LinkedIn</span><span>Scroll to explore ↘</span></footer></>};
 
-createRoot(document.getElementById('root')).render(<App />);
+createRoot(document.getElementById('root')).render(<App/>);
