@@ -1,9 +1,10 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, OrbitControls, Stars, Torus, Sphere } from '@react-three/drei';
 import * as THREE from 'three';
 import './styles.css';
+import AdminPanel from './AdminPanel';
 
 const characters = [
   ['01','Naruto Uzumaki','KONOHA','NINJA / JINCHURIKI','Wind Style'], ['02','Sasuke Uchiha','KONOHA','NINJA / AVENGER','Sharingan'], ['03','Sakura Haruno','KONOHA','MEDICAL NINJA','Chakra Control'], ['04','Kakashi Hatake','KONOHA','JŌNIN / COPY NINJA','Lightning'], ['05','Itachi Uchiha','AKATSUKI','ROGUE NINJA','Mangekyō'], ['06','Gaara','SUNA','KAZEKAGE','Sand Control'], ['07','Hinata Hyūga','KONOHA','NINJA','Byakugan'], ['08','Shikamaru Nara','KONOHA','STRATEGIST','Shadow Possession'], ['09','Jiraiya','KONOHA','SANNIN / SAGE','Toad Sage'], ['10','Orochimaru','OTOGAKURE','SANNIN / SCIENTIST','Snake Sage'], ['11','Tsunade','KONOHA','HOKAGE / MEDIC','Strength'], ['12','Rock Lee','KONOHA','TAIJUTSU SPECIALIST','Eight Gates'], ['13','Neji Hyūga','KONOHA','NINJA','Gentle Fist'], ['14','Might Guy','KONOHA','JŌNIN / TAİJUTSU','Eight Gates'], ['15','Madara Uchiha','AKATSUKI','LEGENDARY NINJA','Rinnegan'], ['16','Obito Uchiha','AKATSUKI','MASKED MAN','Kamui'], ['17','Pain / Nagato','AKATSUKI','LEADER','Rinnegan'], ['18','Konan','AKATSUKI','ROGUE NINJA','Paper Jutsu'], ['19','Killer B','KUMOGAKURE','JINCHURIKI','Eight-Tails'], ['20','Minato Namikaze','KONOHA','FOURTH HOKAGE','Flying Raijin'], ['21','Mito Uzumaki','KONOHA','FIRST JINCHURIKI','Sealing'], ['22','Hashirama Senju','KONOHA','FIRST HOKAGE','Wood Style'], ['23','Tobirama Senju','KONOHA','SECOND HOKAGE','Water Style'], ['24','Kabuto Yakushi','OTOGAKURE','SPY / MEDIC','Sage Mode']
@@ -24,7 +25,17 @@ function ChakraOrb() {
 }
 function OrbScene() { return <Canvas camera={{ position: [0, 0, 4.2], fov: 38 }} dpr={[1, 2]}><ambientLight intensity={.3} /><Stars radius={6} depth={3} count={150} factor={1.5} saturation={0} fade /><ChakraOrb /><OrbitControls enableZoom={false} autoRotate autoRotateSpeed={.5} /></Canvas>; }
 
-function Avatar({ index }) { return <div className="avatar"><div className="avatar-mark">{String(index + 1).padStart(2,'0')}</div><div className="avatar-glow" /></div>; }
+function Avatar({ index, code, name, akatsukiImages }) {
+  // If an admin-provided image exists for this member code, show it.
+  const img = (akatsukiImages && code) ? akatsukiImages[code] : null;
+  if (img) {
+    return <div className="avatar" style={{ display: 'grid', placeItems: 'center' }}>
+      <img src={img} alt={name} style={{ width: 120, height: 120, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(232,93,4,.8)' }} />
+      <div className="avatar-mark" style={{ position: 'absolute', top: 10, left: 12, fontSize: 18, opacity: .9 }}>{String(index + 1).padStart(2,'0')}</div>
+    </div>;
+  }
+  return <div className="avatar"><div className="avatar-mark">{String(index + 1).padStart(2,'0')}</div><div className="avatar-glow" /></div>;
+}
 
 // FAQ data and component
 function FAQ() {
@@ -59,9 +70,20 @@ function FAQ() {
 
 function App() {
   const [filter, setFilter] = useState('ALL'); const [query, setQuery] = useState(''); const [active, setActive] = useState(null);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [akatsukiImages, setAkatsukiImages] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('akatsukiImages') || '{}'); } catch (e) { return {}; }
+  });
+
+  useEffect(() => { try { localStorage.setItem('akatsukiImages', JSON.stringify(akatsukiImages || {})); } catch (e) {} }, [akatsukiImages]);
+
   const visible = useMemo(() => characters.filter(c => (filter === 'ALL' || c[2] === filter) && c[1].toLowerCase().includes(query.toLowerCase())), [filter, query]);
   return <main>
-    <nav className="nav"><div className="brand"><span className="brand-dot" /> SHINOBI <b>INDEX</b></div><div className="nav-links"><a href="#archive">ARCHIVE</a><a href="#clans">CLANS</a><a href="#about">ABOUT</a></div><div className="nav-status"><span className="live" /> DATABASE // 04.22</div></nav>
+    <nav className="nav"><div className="brand"><span className="brand-dot" /> SHINOBI <b>INDEX</b></div><div className="nav-links"><a href="#archive">ARCHIVE</a><a href="#clans">CLANS</a><a href="#about">ABOUT</a></div><div className="nav-status"><span className="live" /> DATABASE // 04.22</div>
+      <div style={{ position: 'absolute', right: 18, top: 12 }}>
+        <button onClick={() => setShowAdmin(!showAdmin)} style={{ background: 'transparent', border: '1px solid #34302b', color: '#e85d04', padding: '6px 10px', borderRadius: 6 }}>Admin</button>
+      </div>
+    </nav>
     <section className="hero">
       <div className="hero-copy"><p className="eyebrow">木ノ葉隠れ — THE HIDDEN LEAF VILLAGE</p><h1>THE<br /><em>SHINOBI</em><br />INDEX<span>.</span></h1><p className="lede">An unauthorized field guide to the legends, rogues, and hidden forces of the Naruto world.</p><a className="scroll" href="#archive">↓ <span>EXPLORE ARCHIVE</span></a></div>
       <div className="orb-wrap"><div className="orb-label top">CHAKRA CORE <strong>///</strong></div><OrbScene /><div className="orb-label bottom">INTERACTIVE RELIC <strong>03:44:12</strong></div></div>
@@ -69,14 +91,16 @@ function App() {
     </section>
     <section id="archive" className="archive"><header className="section-head"><div><p className="eyebrow">FIELD RECORDS / 001—024</p><h2>CHARACTER <i>ARCHIVE</i></h2></div><div className="count">{visible.length.toString().padStart(2,'0')} <small>ENTRIES</small></div></header>
       <div className="toolbar"><div className="filters">{filters.map(f => <button key={f} className={filter === f ? 'active' : ''} onClick={() => setFilter(f)}>{f}</button>)}</div><label className="search">⌕ <input value={query} onChange={e => setQuery(e.target.value)} placeholder="SEARCH OPERATIVE..." /></label></div>
-      <div className="grid">{visible.map((c,i) => <article className="card" key={c[1]} onClick={() => setActive(c)}><div className="card-top"><span>#{c[0]}</span><span className="rank">{c[2]}</span></div><Avatar index={characters.indexOf(c)} /><div className="card-info"><h3>{c[1]}</h3><p>{c[3]}</p></div><div className="card-foot"><span>{c[4]}</span><b>↗</b></div></article>)}</div>
+      <div className="grid">{visible.map((c,i) => <article className="card" key={c[1]} onClick={() => setActive(c)}><div className="card-top"><span>#{c[0]}</span><span className="rank">{c[2]}</span></div><Avatar index={characters.indexOf(c)} code={c[0]} name={c[1]} akatsukiImages={akatsukiImages} /><div className="card-info"><h3>{c[1]}</h3><p>{c[3]}</p></div><div className="card-foot"><span>{c[4]}</span><b>↗</b></div></article>)}</div>
     </section>
 
     {/* FAQ section added per admin request */}
     <FAQ />
 
     <footer id="about"><span>SHINOBI INDEX / NARUTO FIELD ARCHIVE</span><span>MADE FOR THE CURIOUS · NOT AFFILIATED WITH RIGHTS HOLDERS</span></footer>
-    {active && <div className="modal-backdrop" onClick={() => setActive(null)}><div className="modal" onClick={e => e.stopPropagation()}><button className="close" onClick={() => setActive(null)}>×</button><p className="eyebrow">OPERATIVE FILE #{active[0]}</p><div className="modal-avatar"><Avatar index={characters.indexOf(active)} /></div><h2>{active[1]}</h2><p className="modal-meta">{active[2]} / {active[3]}</p><div className="intel"><span>PRIMARY TECHNIQUE</span><strong>{active[4]}</strong><span>STATUS</span><strong>ACTIVE IN ARCHIVE</strong></div></div></div>}
+    {active && <div className="modal-backdrop" onClick={() => setActive(null)}><div className="modal" onClick={e => e.stopPropagation()}><button className="close" onClick={() => setActive(null)}>×</button><p className="eyebrow">OPERATIVE FILE #{active[0]}</p><div className="modal-avatar"><Avatar index={characters.indexOf(active)} code={active[0]} name={active[1]} akatsukiImages={akatsukiImages} /></div><h2>{active[1]}</h2><p className="modal-meta">{active[2]} / {active[3]}</p><div className="intel"><span>PRIMARY TECHNIQUE</span><strong>{active[4]}</strong><span>STATUS</span><strong>ACTIVE IN ARCHIVE</strong></div></div></div>}
+
+    {showAdmin && <div style={{ position: 'fixed', right: 20, top: 78, zIndex: 40 }}><AdminPanel akatsukiImages={akatsukiImages} setAkatsukiImages={setAkatsukiImages} akatsukiList={characters.filter(c => c[2] === 'AKATSUKI')} /></div>}
   </main>;
 }
 createRoot(document.getElementById('root')).render(<App />);
