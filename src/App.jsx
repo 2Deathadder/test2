@@ -1,16 +1,84 @@
-import { useMemo, useState } from 'react';
-import { Activity, Bell, CheckCircle2, ChevronDown, CircleDashed, ClipboardList, Filter, LayoutDashboard, Menu, Plus, Search, Settings, Users, X } from 'lucide-react';
-import { useTasks } from './hooks/useTasks';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import GameCanvas from './components/GameCanvas';
 
-const members = { sarah: { name: 'Sarah Martin', initials: 'SM', color: 'bg-blue-100 text-blue-700' }, thomas: { name: 'Thomas Leroy', initials: 'TL', color: 'bg-violet-100 text-violet-700' }, ines: { name: 'Inès Bernard', initials: 'IB', color: 'bg-emerald-100 text-emerald-700' }, marc: { name: 'Marc Dubois', initials: 'MD', color: 'bg-amber-100 text-amber-700' } };
-const statuses = { todo: { label: 'À faire', dot: 'bg-slate-400', badge: 'bg-slate-100 text-slate-600' }, in_progress: { label: 'En cours', dot: 'bg-blue-500', badge: 'bg-blue-50 text-blue-700' }, done: { label: 'Terminé', dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700' } };
+const BEST_KEY = 'willow-run-best';
 
-function StatCard({ label, value, note, icon: Icon, accent, progress }) { return <div className="rounded-xl border border-line bg-white p-5 shadow-soft"><div className="flex items-start justify-between"><div><p className="text-sm font-medium text-muted">{label}</p><p className="mt-2 text-3xl font-bold tracking-tight text-ink">{value}</p></div><span className={`rounded-lg p-2.5 ${accent}`}><Icon size={19} /></span></div>{progress !== undefined ? <div className="mt-4"><div className="h-1.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${progress}%` }} /></div><p className="mt-2 text-xs text-muted">{progress}% du total</p></div> : <p className="mt-4 text-xs text-muted">{note}</p>}</div> }
+function PlayIcon() {
+  return <span aria-hidden="true" className="play-icon">▶</span>;
+}
 
-function TaskModal({ onClose, onCreate, saving }) { const [form, setForm] = useState({ title: '', description: '', assigneeId: 'sarah', status: 'todo' }); const change = e => setForm({ ...form, [e.target.name]: e.target.value }); const submit = e => { e.preventDefault(); if (!form.title.trim()) return; onCreate(form); onClose(); }; return <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm"><div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"><div className="flex items-start justify-between"><div><p className="text-xs font-semibold uppercase tracking-widest text-brand">Nouvelle tâche</p><h2 className="mt-1 text-xl font-bold text-ink">Ajouter une tâche à l’équipe</h2></div><button onClick={onClose} className="rounded-lg p-2 text-muted hover:bg-slate-100" aria-label="Fermer"><X size={19}/></button></div><form onSubmit={submit} className="mt-6 space-y-4"><label className="block text-sm font-semibold text-ink">Titre<input autoFocus name="title" value={form.title} onChange={change} placeholder="Ex. Préparer la revue produit" className="field mt-2" required /></label><label className="block text-sm font-semibold text-ink">Description <span className="font-normal text-muted">(facultatif)</span><textarea name="description" value={form.description} onChange={change} rows="3" placeholder="Ajoutez un peu de contexte..." className="field mt-2 resize-none" /></label><div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm font-semibold text-ink">Membre assigné<select name="assigneeId" value={form.assigneeId} onChange={change} className="field mt-2">{Object.entries(members).map(([id, m]) => <option key={id} value={id}>{m.name}</option>)}</select></label><label className="block text-sm font-semibold text-ink">Statut<select name="status" value={form.status} onChange={change} className="field mt-2">{Object.entries(statuses).map(([id, s]) => <option key={id} value={id}>{s.label}</option>)}</select></label></div><div className="flex justify-end gap-3 border-t border-line pt-5"><button type="button" onClick={onClose} className="button-secondary">Annuler</button><button disabled={saving} className="button-primary">{saving ? 'Enregistrement...' : 'Créer la tâche'}</button></div></form></div></div> }
+function App() {
+  const [screen, setScreen] = useState('home');
+  const [score, setScore] = useState(0);
+  const [best, setBest] = useState(() => Number(localStorage.getItem(BEST_KEY) || 0));
+  const gameRef = useRef(null);
 
-function Sidebar({ open, setOpen }) { return <aside className={`${open ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-40 w-64 border-r border-line bg-white transition-transform lg:static lg:translate-x-0`}><div className="flex h-16 items-center border-b border-line px-6"><div className="grid h-8 w-8 place-items-center rounded-lg bg-brand text-white"><ClipboardList size={17}/></div><span className="ml-3 text-lg font-bold tracking-tight text-navy">Task<span className="text-brand">Flow</span></span><button onClick={() => setOpen(false)} className="ml-auto lg:hidden"><X size={18}/></button></div><nav className="space-y-1 px-3 py-5"><p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[.16em] text-slate-400">Espace de travail</p><a className="nav-item nav-active"><LayoutDashboard size={17}/>Vue d’ensemble</a><a className="nav-item"><ClipboardList size={17}/>Toutes les tâches<span className="ml-auto rounded-md bg-blue-50 px-2 py-0.5 text-xs text-brand">12</span></a><a className="nav-item"><Users size={17}/>Équipe</a><p className="px-3 pb-2 pt-7 text-[10px] font-bold uppercase tracking-[.16em] text-slate-400">Configuration</p><a className="nav-item"><Settings size={17}/>Paramètres</a></nav><div className="absolute bottom-0 w-full border-t border-line p-4"><div className="flex items-center gap-3 rounded-xl bg-canvas p-3"><div className="avatar bg-navy text-white">JD</div><div className="min-w-0"><p className="truncate text-sm font-semibold text-ink">Julien Delorme</p><p className="text-xs text-muted">Administrateur</p></div><ChevronDown size={15} className="ml-auto text-muted"/></div></div></aside> }
+  const startGame = useCallback(() => {
+    setScore(0);
+    setScreen('playing');
+  }, []);
 
-function App() { const { tasks, stats, createTask, updateStatus, saving } = useTasks(); const [sidebar, setSidebar] = useState(false); const [modal, setModal] = useState(false); const [status, setStatus] = useState('all'); const [assignee, setAssignee] = useState('all'); const [notice, setNotice] = useState(false); const filtered = useMemo(() => tasks.filter(t => (status === 'all' || t.status === status) && (assignee === 'all' || t.assigneeId === assignee)), [tasks, status, assignee]); const completion = stats.total ? Math.round(stats.done / stats.total * 100) : 0; const clearFilters = () => { setStatus('all'); setAssignee('all'); }; return <div className="flex min-h-screen bg-canvas text-ink"><Sidebar open={sidebar} setOpen={setSidebar}/>{sidebar && <div onClick={() => setSidebar(false)} className="fixed inset-0 z-30 bg-slate-900/20 lg:hidden"/>}<main className="min-w-0 flex-1"><header className="flex h-16 items-center justify-between border-b border-line bg-white px-4 sm:px-8"><button onClick={() => setSidebar(true)} className="rounded-lg p-2 text-muted hover:bg-slate-100 lg:hidden"><Menu size={20}/></button><div className="hidden text-sm text-muted sm:block">Mardi 20 février 2024</div><div className="ml-auto flex items-center gap-3"><button onClick={() => setNotice(true)} className="relative rounded-lg p-2 text-muted hover:bg-slate-100" aria-label="Notifications"><Bell size={19}/><span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-brand"/></button><div className="avatar bg-blue-100 text-xs font-bold text-brand">JD</div></div></header><div className="mx-auto max-w-[1440px] p-4 sm:p-8"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-sm font-medium text-brand">Bonjour Julien,</p><h1 className="mt-1 text-2xl font-bold tracking-tight text-navy sm:text-3xl">Vue d’ensemble</h1><p className="mt-2 text-sm text-muted">Suivez l’avancement des projets de votre équipe.</p></div><button onClick={() => setModal(true)} className="button-primary self-start sm:self-auto"><Plus size={17}/>Nouvelle tâche</button></div><section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><StatCard label="Total des tâches" value={stats.total} note="Dans votre espace de travail" icon={ClipboardList} accent="bg-blue-50 text-brand"/><StatCard label="À faire" value={stats.todo} note="En attente de démarrage" icon={CircleDashed} accent="bg-slate-100 text-slate-600"/><StatCard label="En cours" value={stats.inProgress} note="Actuellement en traitement" icon={Activity} accent="bg-indigo-50 text-indigo-600"/><StatCard label="Terminées" value={stats.done} progress={completion} icon={CheckCircle2} accent="bg-emerald-50 text-emerald-600"/></section><section className="mt-8 rounded-xl border border-line bg-white shadow-soft"><div className="flex flex-col gap-4 border-b border-line p-5 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="font-bold text-navy">Tâches de l’équipe</h2><p className="mt-1 text-sm text-muted">{filtered.length} tâche{filtered.length > 1 ? 's' : ''} affichée{filtered.length > 1 ? 's' : ''}</p></div><div className="flex flex-wrap items-center gap-2"><div className="relative"><Filter size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"/><select value={assignee} onChange={e => setAssignee(e.target.value)} className="filter-select pl-9"><option value="all">Tous les membres</option>{Object.entries(members).map(([id,m]) => <option key={id} value={id}>{m.name}</option>)}</select></div><select value={status} onChange={e => setStatus(e.target.value)} className="filter-select"><option value="all">Tous les statuts</option>{Object.entries(statuses).map(([id,s]) => <option key={id} value={id}>{s.label}</option>)}</select>{(status !== 'all' || assignee !== 'all') && <button onClick={clearFilters} className="p-2 text-muted hover:text-brand" aria-label="Effacer les filtres"><X size={16}/></button>}</div></div><div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left"><thead className="bg-slate-50/70 text-xs font-semibold uppercase tracking-wide text-muted"><tr><th className="px-5 py-3">Tâche</th><th className="px-5 py-3">Assignée à</th><th className="px-5 py-3">Statut</th><th className="px-5 py-3">Mise à jour</th></tr></thead><tbody className="divide-y divide-line">{filtered.map(task => { const member = members[task.assigneeId]; const state = statuses[task.status]; return <tr key={task.id} className="group hover:bg-slate-50/70"><td className="px-5 py-4"><p className="font-semibold text-ink">{task.title}</p>{task.description && <p className="mt-1 max-w-md truncate text-sm text-muted">{task.description}</p>}</td><td className="px-5 py-4"><div className="flex items-center gap-2.5"><span className={`avatar text-[10px] font-bold ${member.color}`}>{member.initials}</span><span className="text-sm text-ink">{member.name}</span></div></td><td className="px-5 py-4"><select value={task.status} onChange={e => updateStatus(task.id, e.target.value)} className={`status-select ${state.badge}`}><option value="todo">À faire</option><option value="in_progress">En cours</option><option value="done">Terminé</option></select></td><td className="px-5 py-4 text-sm text-muted">{task.updatedAt}</td></tr>})}</tbody></table>{filtered.length === 0 && <div className="px-6 py-14 text-center"><Search className="mx-auto text-slate-300"/><p className="mt-3 font-semibold text-ink">Aucune tâche trouvée</p><p className="mt-1 text-sm text-muted">Modifiez les filtres pour afficher d’autres tâches.</p></div>}</div></section><p className="mt-5 text-xs text-muted">Les changements de statut sont enregistrés automatiquement.</p></div></main>{modal && <TaskModal onClose={() => setModal(false)} onCreate={createTask} saving={saving}/>} {notice && <div className="fixed bottom-5 right-5 z-50 flex items-center gap-3 rounded-xl border border-line bg-white p-4 text-sm shadow-xl"><Bell size={17} className="text-brand"/>Vous êtes à jour sur vos notifications.<button onClick={() => setNotice(false)}><X size={15} className="text-muted"/></button></div>}</div> }
+  const finishGame = useCallback((finalScore) => {
+    const nextBest = Math.max(best, finalScore);
+    setScore(finalScore);
+    setBest(nextBest);
+    localStorage.setItem(BEST_KEY, String(nextBest));
+    setScreen('gameover');
+  }, [best]);
+
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        if (screen === 'home' || screen === 'gameover') startGame();
+      }
+      if (event.key.toLowerCase() === 'r' && screen === 'gameover') startGame();
+    };
+    window.addEventListener('keydown', onKey, { passive: false });
+    return () => window.removeEventListener('keydown', onKey);
+  }, [screen, startGame]);
+
+  return (
+    <main className="app-shell">
+      <div className="ambient ambient-one" /><div className="ambient ambient-two" />
+      <header className="topbar">
+        <button className="brand" onClick={() => setScreen('home')} aria-label="Retour à l'accueil">
+          <span className="brand-mark">W</span><span>willow<span className="brand-dot">.</span></span>
+        </button>
+        <div className="status-chip"><span className="status-pulse" /> RUN / 2D</div>
+      </header>
+
+      {screen === 'home' && (
+        <section className="home-screen" aria-labelledby="home-title">
+          <div className="eyebrow"><span className="eyebrow-line" /> ENDLESS MOTION <span className="eyebrow-line" /></div>
+          <h1 id="home-title">Keep moving.<br /><em>Stay in the flow.</em></h1>
+          <p className="lead">Traverse la ligne d'horizon, évite les anomalies<br className="desktop-only" /> et construis ton meilleur score.</p>
+          <button className="primary-button" onClick={startGame}><PlayIcon />Jouer maintenant</button>
+          <div className="home-meta"><span>MEILLEUR SCORE <strong>{String(best).padStart(4, '0')}</strong></span><span className="meta-separator" /><span>CLAVIER · MOBILE</span></div>
+          <div className="hero-orbit" aria-hidden="true"><div className="orbit-ring ring-a" /><div className="orbit-ring ring-b" /><div className="orbit-core" /></div>
+        </section>
+      )}
+
+      {screen === 'playing' && (
+        <section className="game-screen" aria-label="Zone de jeu">
+          <div className="game-heading"><div><span className="eyebrow compact">WILLOW RUN / SESSION ACTIVE</span><h2>Find your rhythm.</h2></div><div className="live-score"><small>DISTANCE</small><strong>{String(score).padStart(4, '0')}<i>m</i></strong></div></div>
+          <GameCanvas ref={gameRef} onScore={setScore} onGameOver={finishGame} />
+          <p className="controls-hint"><kbd>ESPACE</kbd> ou <span className="tap-dot" /> TAP pour sauter <span className="hint-divider" /> vitesse adaptative</p>
+        </section>
+      )}
+
+      {screen === 'gameover' && (
+        <section className="gameover-screen" aria-labelledby="over-title">
+          <div className="over-badge">SESSION TERMINÉE</div>
+          <h1 id="over-title">Nice run.<br /><em>Again?</em></h1>
+          <div className="result-card"><div><small>SCORE FINAL</small><strong>{String(score).padStart(4, '0')}<i>m</i></strong></div><div className="result-divider" /><div><small>MEILLEUR SCORE</small><strong className="best-number">{String(best).padStart(4, '0')}<i>m</i></strong></div></div>
+          <button className="primary-button" onClick={startGame}><PlayIcon />Rejouer</button>
+          <button className="text-button" onClick={() => setScreen('home')}>Retour à l'accueil</button>
+        </section>
+      )}
+      <footer className="footer">WILLOW RUN <span>·</span> A SMALL ESCAPE INTO MOTION</footer>
+    </main>
+  );
+}
 
 export default App;
