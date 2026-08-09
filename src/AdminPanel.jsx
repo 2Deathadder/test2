@@ -1,8 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function AdminPanel({ akatsukiImages = {}, setAkatsukiImages = () => {}, akatsukiList = [] }) {
-  const [selected, setSelected] = useState(akatsukiList[0] ? akatsukiList[0][0] : '');
-  const [preview, setPreview] = useState(null);
+  const initialSelected = akatsukiList && akatsukiList[0] ? akatsukiList[0][0] : '';
+  const [selected, setSelected] = useState(initialSelected);
+  const [preview, setPreview] = useState(() => (akatsukiImages && initialSelected ? akatsukiImages[initialSelected] : null));
+
+  // Keep selected in sync if the provided list changes
+  useEffect(() => {
+    if (!selected && akatsukiList && akatsukiList[0]) {
+      setSelected(akatsukiList[0][0]);
+    } else if (selected && akatsukiList && !akatsukiList.find(m => m && m[0] === selected) && akatsukiList[0]) {
+      setSelected(akatsukiList[0][0]);
+    }
+  }, [akatsukiList]);
+
+  // Update preview whenever selection OR external images change
+  useEffect(() => {
+    setPreview((akatsukiImages || {})[selected] || null);
+  }, [selected, akatsukiImages]);
 
   function onFile(e) {
     const f = e.target.files && e.target.files[0];
@@ -36,8 +51,12 @@ export default function AdminPanel({ akatsukiImages = {}, setAkatsukiImages = ()
       </div>
       <div style={{ marginBottom: 10 }}>
         <label style={{ display: 'block', color: '#cfc8be', fontSize: 13, marginBottom: 6 }}>Member</label>
-        <select value={selected} onChange={e => { setSelected(e.target.value); setPreview((akatsukiImages || {})[e.target.value] || null); }} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, background: '#0b0b0a', color: '#eee9df', border: '1px solid #232020' }}>
-          {akatsukiList.map(m => <option key={m[0]} value={m[0]}>{m[0]} — {m[1]}</option>)}
+        <select value={selected} onChange={e => { setSelected(e.target.value); }} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, background: '#0b0b0a', color: '#eee9df', border: '1px solid #232020' }}>
+          {akatsukiList.map((m, idx) => {
+            const code = Array.isArray(m) ? m[0] : String(m);
+            const name = Array.isArray(m) ? m[1] : String(m);
+            return <option key={code || idx} value={code}>{code} — {name}</option>;
+          })}
         </select>
       </div>
       <div style={{ marginBottom: 10 }}>
